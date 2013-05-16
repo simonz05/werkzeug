@@ -477,14 +477,16 @@ class RedisCache(BaseCache):
     """
 
     def __init__(self, host='localhost', port=6379, password=None,
-                 db=0, default_timeout=300, key_prefix=None):
+                 db=0, default_timeout=300, key_prefix=None,
+                 connection_pool=None):
         BaseCache.__init__(self, default_timeout)
         if isinstance(host, basestring):
             try:
                 import redis
             except ImportError:
                 raise RuntimeError('no redis module found')
-            self._client = redis.Redis(host=host, port=port, password=password, db=db)
+            self._client = redis.Redis(host=host, port=port, password=password,
+                    db=db, connection_pool=connection_pool)
         else:
             self._client = host
         self.key_prefix = key_prefix or ''
