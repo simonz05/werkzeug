@@ -1,10 +1,35 @@
 Werkzeug Changelog
 ==================
 
+Version 0.10
+------------
+
+Release date and codename to be decided
+
+Version 0.9.1
+-------------
+
+(bugfix release, released on June 14th 2013)
+
+- Fixed an issue with integers no longer being accepted in certain
+  parts of the routing system or URL quoting functions.
+- Fixed an issue with `url_quote` not producing the right escape
+  codes for single digit codepoints.
+- Fixed an issue with :class:`~werkzeug.wsgi.SharedDataMiddleware` not
+  reading the path correctly and breaking on etag generation in some
+  cases.
+- Properly handle `Expect: 100-continue` in the development server
+  to resolve issues with curl.
+- Automatically exhaust the input stream on request close.  This should
+  fix issues where not touching request files results in a timeout.
+- Fixed exhausting of streams not doing anything if a non-limited
+  stream was passed into the multipart parser.
+- Raised the buffer sizes for the multipart parser.
+
 Version 0.9
 -----------
 
-Release date to be decided, codename to be chosen.
+Released on June 13nd 2013, codename Planierraupe.
 
 - Added support for :meth:`~werkzeug.wsgi.LimitedStream.tell`
   on the limited stream.
@@ -20,6 +45,7 @@ Release date to be decided, codename to be chosen.
   iterators and streams.
 - URL generation by the routing system now no longer quotes
   ``+``.
+- URL fixing now no longer quotes certain reserved characters.
 - The :func:`werkzeug.security.generate_password_hash` and
   check functions now support any of the hashlib algorithms.
 - `wsgi.get_current_url` is now ascii safe for browsers sending
@@ -39,6 +65,53 @@ Release date to be decided, codename to be chosen.
 - Renamed `LighttpdCGIRootFix` to `CGIRootFix`.
 - Always treat `+` as safe when fixing URLs as people love misusing them.
 - Added support to profiling into directories in the contrib profiler.
+- The escape function now by default escapes quotes.
+- Changed repr of exceptions to be less magical.
+- Simplified exception interface to no longer require environmnts
+  to be passed to recieve the response object.
+- Added sentinel argument to IterIO objects.
+- Added pbkdf2 support for the security module.
+- Added a plain request type that disables all form parsing to only
+  leave the stream behind.
+- Removed support for deprecated `fix_headers`.
+- Removed support for deprecated `header_list`.
+- Removed support for deprecated parameter for `iter_encoded`.
+- Removed support for deprecated non-silent usage of the limited
+  stream object.
+- Removed support for previous dummy `writable` parameter on
+  the cached property.
+- Added support for explicitly closing request objects to close
+  associated resources.
+- Conditional request handling or access to the data property on responses no
+  longer ignores direct passthrough mode.
+- Removed werkzeug.templates and werkzeug.contrib.kickstart.
+- Changed host lookup logic for forwarded hosts to allow lists of
+  hosts in which case only the first one is picked up.
+- Added `wsgi.get_query_string`, `wsgi.get_path_info` and
+  `wsgi.get_script_name` and made the `wsgi.pop_path_info` and
+  `wsgi.peek_path_info` functions perform unicode decoding.  This
+  was necessary to avoid having to expose the WSGI encoding dance
+  on Python 3.
+- Added `content_encoding` and `content_md5` to the request object's
+  common request descriptor mixin.
+- added `options` and `trace` to the test client.
+- Overhauled the utilization of the input stream to be easier to use
+  and better to extend.  The detection of content payload on the input
+  side is now more compliant with HTTP by detecting off the content
+  type header instead of the request method.  This also now means that
+  the stream property on the request class is always available instead
+  of just when the parsing fails.
+- Added support for using :class:`werkzeug.wrappers.BaseResponse` in a with
+  statement.
+- Changed `get_app_iter` to fetch the response early so that it does not
+  fail when wrapping a response iterable.  This makes filtering easier.
+- Introduced `get_data` and `set_data` methods for responses.
+- Introduced `get_data` for requests.
+- Soft deprecated the `data` descriptors for request and response objects.
+- Added `as_bytes` operations to some of the headers to simplify working
+  with things like cookies.
+- Made the debugger paste tracebacks into github's gist service as
+  private pastes.
 
 Version 0.8.4
 -------------

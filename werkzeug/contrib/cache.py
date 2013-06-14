@@ -53,24 +53,21 @@
     you have access to it (either as a module global you can import or you just
     put it into your WSGI application).
 
-    :copyright: (c) 2011 by the Werkzeug Team, see AUTHORS for more details.
+    :copyright: (c) 2013 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
 import os
 import re
 import tempfile
-try:
-    from hashlib import md5
-except ImportError:
-    from md5 import new as md5
-from itertools import izip
+from hashlib import md5
 from time import time
-from werkzeug.posixemulation import rename
-
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+from werkzeug._compat import iteritems, string_types, text_type
+from werkzeug.posixemulation import rename
 
 
 def _items(mappingorseq):
@@ -84,8 +81,11 @@ def _items(mappingorseq):
         ...    assert k*k == v
 
     """
-    return mappingorseq.iteritems() if hasattr(mappingorseq, 'iteritems') \
-        else mappingorseq
+    if hasattr(mappingorseq, "iteritems"):
+        return mappingorseq.iteritems()
+    elif hasattr(mappingorseq, "items"):
+        return mappingorseq.items()
+    return mappingorseq
 
 
 class BaseCache(object):
@@ -139,7 +139,7 @@ class BaseCache(object):
         :param keys: The function accepts multiple keys as positional
                      arguments.
         """
-        return dict(izip(keys, self.get_many(*keys)))
+        return dict(zip(keys, self.get_many(*keys)))
 
     def set(self, key, value, timeout=None):
         """Adds a new key/value to the cache (overwrites value, if key already
@@ -245,7 +245,6 @@ class SimpleCache(BaseCache):
                     self._cache.pop(key, None)
 
     def get(self, key):
-        now = time()
         expires, value = self._cache.get(key, (0, None))
         if expires > time():
             return pickle.loads(value)
@@ -340,7 +339,7 @@ class MemcachedCache(BaseCache):
         d = rv = self._client.get_multi(key_mapping.keys())
         if have_encoded_keys or self.key_prefix:
             rv = {}
-            for key, value in d.iteritems():
+            for key, value in iteritems(d):
                 rv[key_mapping[key]] = value
         if len(rv) < len(keys):
             for key in keys:
@@ -480,7 +479,7 @@ class RedisCache(BaseCache):
                  db=0, default_timeout=300, key_prefix=None,
                  connection_pool=None):
         BaseCache.__init__(self, default_timeout)
-        if isinstance(host, basestring):
+        if isinstance(host, string_types):
             try:
                 import redis
             except ImportError:
@@ -587,7 +586,7 @@ class FileSystemCache(BaseCache):
     #: used for temporary files by the FileSystemCache
     _fs_transaction_suffix = '.__wz_cache'
 
-    def __init__(self, cache_dir, threshold=500, default_timeout=300, mode=0600):
+    def __init__(self, cache_dir, threshold=500, default_timeout=300, mode=0o600):
         BaseCache.__init__(self, default_timeout)
         self._path = cache_dir
         self._threshold = threshold
@@ -632,6 +631,8 @@ class FileSystemCache(BaseCache):
                 pass
 
     def _get_filename(self, key):
+        if isinstance(key, text_type):
+            key = key.encode('utf-8') #XXX unicode review
         hash = md5(key).hexdigest()
         return os.path.join(self._path, hash)
 
